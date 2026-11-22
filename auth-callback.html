@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>התחברות</title>
+<style>body{font-family:system-ui,'Segoe UI',Arial,sans-serif;display:grid;place-items:center;height:100vh;margin:0;background:#f3f4fb;color:#151a2d}p{font-size:18px}</style></head>
+<body><p id="m">מסיים התחברות…</p>
+<script>
+  // דף החזרה של ההתחברות לגוגל: מעביר את קוד ההרשאה לחלון הראשי של האפליקציה (אותו אתר), וסוגר את החלון הזה
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var msg = { state: q.get('state') || '', code: q.get('code') || '', error: q.get('error') || '' };
+    try { var bc = new BroadcastChannel('budget-auth'); bc.postMessage(msg); bc.close(); } catch (e) {}
+    try { localStorage.setItem('budget.authcb', JSON.stringify(Object.assign({ t: Date.now() }, msg))); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    document.getElementById('m').textContent = msg.error ? 'ההתחברות בוטלה. אפשר לסגור את החלון.' : 'ההתחברות הושלמה. החלון ייסגר מיד.';
+    setTimeout(function () { window.close(); }, 600);
+  })();
+</script></body></html>

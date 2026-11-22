@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="color-scheme" content="light dark" />
+  <title>תקציב ליעד ועדן</title>
+  <meta name="theme-color" content="#334155" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <script>
+    // מסתיר את התוכן מיד אם הנעילה הביומטרית פעילה (לפני שה-JS נטען)
+    try {
+      var s = JSON.parse(localStorage.getItem('budget.v2') || '{}');
+      if (s.settings && s.settings.biometric) document.documentElement.classList.add('locked');
+      var th = (s.settings && s.settings.theme) || 'auto';
+      var dark = th === 'dark' || (th !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+  </script>
+  <script type="module" crossorigin src="./assets/index-DJJOYjNr.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/dist-CEhIwIM1.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-BmJGx_wa.css">
+</head>
+<body>
+  <div id="lock" role="dialog" aria-label="נעילה">
+    <div class="lock-box">
+      <div class="lock-ico">🔒</div>
+      <h2>האפליקציה נעולה</h2>
+      <p id="lockMsg" class="muted">נדרש אימות כדי להמשיך</p>
+      <button class="btn primary" data-act="unlock">פתח באמצעות אימות</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <div id="updBar" class="updbar" hidden></div>
+    <header class="top">
+      <h1>התקציב של ליעד ועדן</h1>
+      <button id="syncBadge" class="badge" data-act="badge">מקומי</button>
+    </header>
+
+    <div id="periodBar" class="period">
+      <div class="period-nav">
+        <button class="icon-btn" data-act="period-prev" aria-label="הקודם">›</button>
+        <div id="periodLabel" class="period-label"></div>
+        <button class="icon-btn" data-act="period-next" aria-label="הבא">‹</button>
+      </div>
+      <div class="chips seg-chips">
+        <button class="chip" data-mode="month">חודש</button>
+        <button class="chip" data-mode="year">שנה</button>
+        <button class="chip" data-mode="all">הכל</button>
+      </div>
+    </div>
+
+    <main>
+      <section id="tab-dashboard" class="tab"></section>
+
+      <section id="tab-add" class="tab" hidden>
+        <form id="txForm" class="card" autocomplete="off">
+          <h3 id="formTitle">הוספת תנועה</h3>
+          <div id="kindSeg" class="seg k">
+            <button type="button" data-fk="once" class="on">חד-פעמי</button>
+            <button type="button" data-fk="rec">קבוע כל חודש</button>
+            <button type="button" data-fk="inst">תשלומים</button>
+          </div>
+          <div class="seg">
+            <button type="button" id="segExpense" data-type="expense" class="on exp">הוצאה</button>
+            <button type="button" id="segIncome" data-type="income" class="inc">הכנסה</button>
+            <button type="button" id="segSaving" data-type="saving" class="sav">חסכונות</button>
+          </div>
+          <div id="amtLabel" class="field-title">סכום</div>
+          <div class="amount-box">
+            <span class="cur">₪</span>
+            <input id="fAmount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0" required />
+          </div>
+          <div class="field-title">קטגוריה</div>
+          <div id="catGrid" class="catgrid"></div>
+          <div class="field-title">מי</div>
+          <div id="whoSeg" class="seg k">
+            <button type="button" data-who="liad">ליעד</button>
+            <button type="button" data-who="eden">עדן</button>
+            <button type="button" data-who="both">משותף</button>
+          </div>
+          <div id="cardWrap" hidden>
+            <div class="field-title">כרטיס אשראי (לא חובה)</div>
+            <div id="cardSeg" class="chips"></div>
+          </div>
+          <label id="fDateWrap">תאריך ושעה
+            <input id="fDate" type="datetime-local" required />
+          </label>
+          <label id="fStartWrap" hidden><span id="fStartLbl">תאריך החיוב הראשון</span>
+            <input id="fStart" type="date" />
+          </label>
+          <label id="fEndWrap" hidden>תאריך סיום (לא חובה, ריק = ללא הגבלה)
+            <input id="fEnd" type="date" />
+          </label>
+          <label id="fCountWrap" hidden>מספר תשלומים
+            <input id="fCount" type="number" inputmode="numeric" min="2" max="120" placeholder="לדוגמה 12" />
+          </label>
+          <p id="fHint" class="hint" hidden></p>
+          <label>הערה (לא חובה)
+            <input id="fNote" type="text" maxlength="120" />
+          </label>
+          <div class="row gap">
+            <button type="submit" class="btn primary grow big" id="fSubmit">שמירה</button>
+            <button type="button" class="btn big" id="fCancel" data-act="cancel-edit" hidden>ביטול</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="tab-list" class="tab" hidden>
+        <div id="listView" class="seg k">
+          <button type="button" data-lv="tx" class="on">תנועות</button>
+          <button type="button" data-lv="rec">חיובים קבועים ותשלומים</button>
+          <button type="button" data-lv="cards">כרטיסי אשראי</button>
+        </div>
+        <div id="txPane" class="tab">
+          <div class="card">
+            <input id="search" type="search" placeholder="חיפוש לפי קטגוריה או הערה" />
+            <div class="chips seg-chips pad">
+              <button class="chip" data-filter="all">הכל</button>
+              <button class="chip" data-filter="expense">הוצאות</button>
+              <button class="chip" data-filter="income">הכנסות</button>
+              <button class="chip" data-filter="saving">חסכונות</button>
+            </div>
+            <div id="whoRow" class="chips seg-chips pad" hidden>
+              <button class="chip" data-who-filter="all">כולם</button>
+              <button class="chip" data-who-filter="liad">ליעד</button>
+              <button class="chip" data-who-filter="eden">עדן</button>
+              <button class="chip" data-who-filter="both">משותף</button>
+            </div>
+          </div>
+          <div id="txList" class="list"></div>
+        </div>
+        <div id="recPane" class="tab" hidden></div>
+        <div id="cardsPane" class="tab" hidden></div>
+      </section>
+
+      <section id="tab-reports" class="tab" hidden>
+        <div class="card">
+          <div class="chips seg-chips">
+            <button class="chip" data-chart="pie">עוגה</button>
+            <button class="chip" data-chart="doughnut">דונאט</button>
+            <button class="chip" data-chart="bar">עמודות</button>
+            <button class="chip" data-chart="trend">מגמה</button>
+          </div>
+          <div id="kindRow" class="chips seg-chips pad">
+            <button class="chip" data-kind="expense">הוצאות</button>
+            <button class="chip" data-kind="income">הכנסות</button>
+            <button class="chip" data-kind="saving">חסכונות</button>
+          </div>
+          <div class="chart-wrap"><canvas id="chart"></canvas></div>
+          <p id="chartEmpty" class="muted center" hidden>אין נתונים להצגה בתקופה שנבחרה</p>
+        </div>
+        <div id="catTable" class="card"></div>
+        <div id="repSummary" class="card"></div>
+      </section>
+
+      <section id="tab-settings" class="tab" hidden></section>
+    </main>
+
+    <button id="fab" class="fab" data-act="goto-add" aria-label="הוספת תנועה">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+
+    <div class="copy" dir="ltr">Copyright by: Liad Y</div>
+
+    <nav class="bottom">
+      <button data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>ראשי
+      </button>
+      <button data-tab="add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>הזנה
+      </button>
+      <button data-tab="list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>תנועות
+      </button>
+      <button data-tab="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>סקירה
+      </button>
+      <button data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>הגדרות
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>
